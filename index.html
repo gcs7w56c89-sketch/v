@@ -22,45 +22,29 @@
     @keyframes fall{to{transform:translateY(260px) rotate(360deg);opacity:0}}
     .msg{font-size:1.05rem;margin-top:.25rem}
     /* collage: CSS grid layout with variable spans */
-    .collage {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      grid-auto-rows: 80px;
-      gap:8px;
-      margin-top: 0.8rem;
-      align-items: stretch;
-    }
-    .collage-item{
-      width:100%;
-      height:100%;
-      overflow:hidden;
-      border-radius:10px;
-      position:relative;
-      background:#eee;
-      box-shadow:0 6px 18px rgba(43,39,51,.08);
-    }
-    .collage-item img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
-      transform-origin:center;
-      transition: transform .45s ease;
-    }
-    .collage-item:hover img{ transform: scale(1.06); }
-    /* assign different spans */
-    .span-2x2{ grid-column: span 2; grid-row: span 2; }
-    .span-3x2{ grid-column: span 3; grid-row: span 2; }
-    .span-2x1{ grid-column: span 2; grid-row: span 1; }
-    .span-1x1{ grid-column: span 1; grid-row: span 1; }
-    .caption{font-size:.95rem;margin-top:.6rem}
-    @media (max-width:900px){
-      .collage{grid-template-columns:repeat(4,1fr);grid-auto-rows:70px}
-      .span-3x2{grid-column:span 2}
-    }
-    @media (max-width:560px){
-      .collage{grid-template-columns:repeat(2,1fr);grid-auto-rows:120px}
-      .span-2x2,.span-3x2{grid-column:span 2; grid-row:span 1}
+   .collage {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 0.8rem;
+}
+
+.collage-item {
+  aspect-ratio: 1 / 1; /* square */
+  overflow: hidden;
+  border-radius: 10px;
+  background:#eee;
+  box-shadow:0 6px 18px rgba(43,39,51,.08);
+}
+
+.collage-item img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+@media (max-width:900px){ .collage{grid-template-columns:repeat(2,1fr);} }
+@media (max-width:560px){ .collage{grid-template-columns:repeat(1,1fr);} }
     }
   </style>
 </head>
