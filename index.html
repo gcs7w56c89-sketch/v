@@ -10,29 +10,70 @@
     .page{max-width:720px;width:100%;text-align:center;padding:2rem;border-radius:16px;background:rgba(255,255,255,0.06);box-shadow:0 10px 30px rgba(0,0,0,.12)}
     .question{font-size:clamp(1.6rem,4vw,2rem);margin:0 0 1.25rem}
     .buttons{display:flex;gap:1rem;justify-content:center;align-items:center;position:relative;min-height:120px}
-    .btn{padding:1rem 2rem;border-radius:12px;border:0;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(43,39,51,.12)}
+    .btn{padding:1rem 2rem;border-radius:12px;border:0;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(43,39,51,.12);user-select:none}
+    .btn:focus{outline:3px solid rgba(255,255,255,0.18);transform:translateY(-2px) scale(1.02)}
     .yes{background:linear-gradient(180deg,var(--yes),#32b36f)}.no{background:linear-gradient(180deg,var(--no),#e04444)}
     .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(15,8,20,.45);z-index:50}
-    .hidden{display:none}.dialog{background:#fff;color:var(--text);border-radius:16px;padding:1.25rem;width:min(560px,92%);box-shadow:0 20px 60px rgba(11,10,15,.35);text-align:center;position:relative}
+    .hidden{display:none}.dialog{background:#fff;color:var(--text);border-radius:16px;padding:1rem;width:min(920px,94%);box-shadow:0 20px 60px rgba(11,10,15,.35);text-align:center;position:relative;overflow:auto;max-height:90vh}
     .close{position:absolute;right:10px;top:10px;border:0;background:transparent;cursor:pointer}
-    .heart{width:140px;height:140px;margin:.5rem auto 1rem;transform:scale(0);transition:transform .45s cubic-bezier(.2,.9,.2,1)}
+    .heart{width:120px;height:120px;margin:.5rem auto 1rem;transform:scale(0);transition:transform .45s cubic-bezier(.2,.9,.2,1)}
     .heart.show{transform:scale(1);animation:beat 800ms infinite}@keyframes beat{0%{transform:scale(.98)}50%{transform:scale(1.06)}100%{transform:scale(.98)}}
     .confetti-piece{position:absolute;opacity:.95;will-change:transform,top,left;animation:fall 1300ms linear forwards}
     @keyframes fall{to{transform:translateY(260px) rotate(360deg);opacity:0}}
     .msg{font-size:1.05rem;margin-top:.25rem}
-    @media (max-width:420px){.buttons{flex-direction:column}.btn{width:100%}}
+    /* collage: CSS grid layout with variable spans */
+    .collage {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-auto-rows: 80px;
+      gap:8px;
+      margin-top: 0.8rem;
+      align-items: stretch;
+    }
+    .collage-item{
+      width:100%;
+      height:100%;
+      overflow:hidden;
+      border-radius:10px;
+      position:relative;
+      background:#eee;
+      box-shadow:0 6px 18px rgba(43,39,51,.08);
+    }
+    .collage-item img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      transform-origin:center;
+      transition: transform .45s ease;
+    }
+    .collage-item:hover img{ transform: scale(1.06); }
+    /* assign different spans */
+    .span-2x2{ grid-column: span 2; grid-row: span 2; }
+    .span-3x2{ grid-column: span 3; grid-row: span 2; }
+    .span-2x1{ grid-column: span 2; grid-row: span 1; }
+    .span-1x1{ grid-column: span 1; grid-row: span 1; }
+    .caption{font-size:.95rem;margin-top:.6rem}
+    @media (max-width:900px){
+      .collage{grid-template-columns:repeat(4,1fr);grid-auto-rows:70px}
+      .span-3x2{grid-column:span 2}
+    }
+    @media (max-width:560px){
+      .collage{grid-template-columns:repeat(2,1fr);grid-auto-rows:120px}
+      .span-2x2,.span-3x2{grid-column:span 2; grid-row:span 1}
+    }
   </style>
 </head>
 <body>
   <main class="page">
     <h1 class="question">Will you be my Valentine?</h1>
-    <div class="buttons" id="buttonArea">
-      <button id="yesBtn" class="btn yes" aria-label="Yes">YES</button>
-      <button id="noBtn" class="btn no" aria-label="No">NO</button>
+    <div class="buttons" id="buttonArea" aria-hidden="false">
+      <button id="yesBtn" class="btn yes" aria-label="Yes, I'll be your valentine">YES</button>
+      <button id="noBtn" class="btn no" aria-label="No, I won't be your valentine">NO</button>
     </div>
 
     <div id="overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-hidden="true">
-      <div class="dialog" role="document">
+      <div class="dialog" role="document" aria-live="polite">
         <button id="closeDialog" class="close" aria-label="Close">✕</button>
         <div id="dialogContent" class="dialog-content"></div>
       </div>
@@ -41,32 +82,140 @@
 
   <script>
   (function(){
-    const yesBtn=document.getElementById('yesBtn'), noBtn=document.getElementById('noBtn'),
-          overlay=document.getElementById('overlay'), dialogContent=document.getElementById('dialogContent'),
-          closeDialog=document.getElementById('closeDialog'), buttonArea=document.getElementById('buttonArea');
+    // --- USER: Set your uploaded image filenames here (relative to repo root) ---
+    // Example: if you uploaded assets/photo1.jpg and assets/photo2.jpg, add exactly those names.
+    const images = [
+      'assets/photo1.jpg',
+      'assets/photo2.jpg',
+      'assets/photo3.jpg',
+      'assets/photo4.jpg',
+      'assets/photo5.jpg',
+      'assets/photo6.jpg'
+    ];
+    // ------------------------------------------------------------------------
 
-    function showDialog(html){ dialogContent.innerHTML=html; overlay.classList.remove('hidden'); overlay.setAttribute('aria-hidden','false'); setTimeout(()=>{ const el=overlay.querySelector('[id]'); if(el) el.focus(); },40); }
-    function hideDialog(){ overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden','true'); yesBtn.focus(); noBtn.style.position=''; noBtn.style.left=''; noBtn.style.top=''; noBtn.style.transform=''; }
+    const yesBtn = document.getElementById('yesBtn');
+    const noBtn = document.getElementById('noBtn');
+    const overlay = document.getElementById('overlay');
+    const dialogContent = document.getElementById('dialogContent');
+    const closeDialog = document.getElementById('closeDialog');
+    const buttonArea = document.getElementById('buttonArea');
 
-    yesBtn.addEventListener('click', ()=> {
-      const html = '<div class=\"heart\" id=\"heartSVG\"><svg viewBox=\"0 0 32 29.6\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><path fill=\"#ff5b86\" d=\"M23.6 0c-2.9 0-5.4 1.6-6.8 4C15.8 1.6 13.3 0 10.4 0 4.7 0 0 4.7 0 10.4c0 7.5 9.6 13.6 15.6 18.4 1.7 1.2 4.2 1.2 5.9 0C22.4 24 32 17.9 32 10.4 32 4.7 27.3 0 23.6 0z\"/></svg></div><div class=\"msg\"><strong>YAY... I LOVE YOU KB. YOU\\'RE MY VALENTINE FOREVER</strong></div><div style=\"margin-top:.8rem;\"><button id=\"yayClose\" class=\"btn yes\" style=\"padding:.6rem 1rem; font-size:1rem\">Aww ❤️</button></div>';
-      showDialog(html); createConfetti(28);
-      setTimeout(()=>{ const yayClose=document.getElementById('yayClose'); if(yayClose) yayClose.addEventListener('click', hideDialog); },50);
+    function showDialog(html){
+      dialogContent.innerHTML = html;
+      overlay.classList.remove('hidden');
+      overlay.setAttribute('aria-hidden','false');
+      setTimeout(()=> {
+        const focusable = overlay.querySelector('button, [tabindex]:not([tabindex="-1"])');
+        if(focusable) focusable.focus();
+        const heart = document.getElementById('heartSVG'); if(heart) heart.classList.add('show');
+      },40);
+    }
+    function hideDialog(){
+      overlay.classList.add('hidden');
+      overlay.setAttribute('aria-hidden','true');
+      yesBtn.focus();
+      noBtn.style.position=''; noBtn.style.left=''; noBtn.style.top=''; noBtn.style.transform='';
+    }
+
+    // Compose collage HTML from images array.
+    function buildCollageHtml(){
+      if(!images || images.length===0){
+        return '<div class="msg">No images found. Upload images to assets/ and update the image list in the script.</div>';
+      }
+      // Make positions visually interesting by assigning span classes in a pattern.
+      const spanClasses = ['span-3x2','span-2x2','span-2x1','span-1x1','span-2x1','span-1x1'];
+      const items = images.map((src, i)=> {
+        const cls = spanClasses[i % spanClasses.length];
+        // Safe alt: use filename
+        const alt = src.split('/').pop().replace(/[-_]/g,' ');
+        return `<div class="collage-item ${cls}"><img src="${src}" alt="${alt}"></div>`;
+      }).join('');
+      return `<div class="collage" role="list">${items}</div>`;
+    }
+
+    yesBtn.addEventListener('click', () => {
+      const collageHtml = buildCollageHtml();
+      const html = `
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="heart" id="heartSVG" aria-hidden="true">
+            <svg viewBox="0 0 32 29.6" width="100%" height="100%" aria-hidden="true">
+              <path fill="#ff5b86" d="M23.6 0c-2.9 0-5.4 1.6-6.8 4C15.8 1.6 13.3 0 10.4 0 4.7 0 0 4.7 0 10.4c0 7.5 9.6 13.6 15.6 18.4 1.7 1.2 4.2 1.2 5.9 0C22.4 24 32 17.9 32 10.4 32 4.7 27.3 0 23.6 0z"/>
+            </svg>
+          </div>
+          <div class="msg"><strong>YAY... I LOVE YOU KB. YOU'RE MY VALENTINE FOREVER</strong></div>
+        </div>
+
+        ${collageHtml}
+
+        <div class="caption">A few memories — can’t wait to make more with you ❤️</div>
+
+        <div style="margin-top:.8rem;">
+          <button id="yayClose" class="btn yes" style="padding:.6rem 1rem; font-size:1rem">Aww ❤️</button>
+        </div>
+      `;
+      showDialog(html);
+      createConfetti(28);
+      setTimeout(()=>{ const yayClose = document.getElementById('yayClose'); if(yayClose) yayClose.addEventListener('click', hideDialog); },50);
     });
 
-    noBtn.addEventListener('pointerenter',(ev)=>{ if(ev.pointerType==='mouse'||ev.pointerType==='touch') dodgeButton(); });
-    noBtn.addEventListener('click', ()=> { const html='<div class=\"msg\"><strong>Oh!</strong> You clicked NO — maybe next time? 💌</div><div style=\"margin-top:.8rem;\"><button id=\"noClose\" class=\"btn\" style=\"background:#777;color:#fff;padding:.6rem 1rem; font-size:1rem\">Close</button></div>'; showDialog(html); setTimeout(()=>{ const noClose=document.getElementById('noClose'); if(noClose) noClose.addEventListener('click', hideDialog); },50); });
+    // NO dodge behavior (unchanged)
+    function onPointerEnter(ev){
+      if(ev && ev.pointerType === 'keyboard') return;
+      dodgeButton();
+    }
+    noBtn.addEventListener('pointerenter', onPointerEnter);
+    noBtn.addEventListener('mouseenter', ()=> dodgeButton());
+
+    noBtn.addEventListener('click', () => {
+      const html = `<div class="msg"><strong>Oh!</strong> You clicked NO — maybe next time? 💌</div>
+        <div style="margin-top:.8rem;"><button id="noClose" class="btn" style="background:#777;color:#fff;padding:.6rem 1rem; font-size:1rem">Close</button></div>`;
+      showDialog(html);
+      setTimeout(()=>{ const noClose = document.getElementById('noClose'); if(noClose) noClose.addEventListener('click', hideDialog); },50);
+    });
 
     closeDialog.addEventListener('click', hideDialog);
-    overlay.addEventListener('click', e=>{ if(e.target===overlay) hideDialog(); });
-    document.addEventListener('keydown', e=>{ if(e.key==='Escape' && overlay.getAttribute('aria-hidden')==='false') hideDialog(); });
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) hideDialog(); });
+    document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && overlay.getAttribute('aria-hidden') === 'false') hideDialog(); });
 
-    function createConfetti(count){ const colors=['#ffcdff','#ffd2a6','#64d68f','#ff6b6b','#ff5b86','#ffe66d']; for(let i=0;i<count;i++){ const piece=document.createElement('div'); piece.className='confetti-piece'; const w=8+Math.random()*10,h=12+Math.random()*14; piece.style.width=w+'px'; piece.style.height=h+'px'; piece.style.background=colors[Math.floor(Math.random()*colors.length)]; piece.style.left=(20+Math.random()*60)+'%'; piece.style.top=(10+Math.random()*10)+'%'; piece.style.transform='rotate('+ (Math.random()*360) +'deg)'; piece.style.animationDuration=(900+Math.random()*900)+'ms'; piece.style.borderRadius=(Math.random()*50)+'%'; overlay.appendChild(piece); setTimeout(()=>{ if(piece&&piece.parentNode) piece.parentNode.removeChild(piece); },2200); } }
+    function createConfetti(count){
+      const colors = ['#ffcdff','#ffd2a6','#64d68f','#ff6b6b','#ff5b86','#ffe66d'];
+      for(let i=0;i<count;i++){
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        const w = 8 + Math.random()*12; const h = 12 + Math.random()*18;
+        piece.style.width = w + 'px'; piece.style.height = h + 'px';
+        piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+        piece.style.left = (10 + Math.random()*80) + '%'; piece.style.top = (5 + Math.random()*10) + '%';
+        piece.style.transform = 'rotate(' + (Math.random()*360) + 'deg)';
+        piece.style.animationDuration = (900 + Math.random()*1000) + 'ms'; piece.style.borderRadius = (Math.random()*50) + '%';
+        overlay.appendChild(piece);
+        setTimeout(()=> { if(piece.parentNode) piece.parentNode.removeChild(piece); }, 2500);
+      }
+    }
 
-    function dodgeButton(){ const areaRect=buttonArea.getBoundingClientRect(), btnRect=noBtn.getBoundingClientRect(); noBtn.style.position='absolute'; const areaWidth=areaRect.width, areaHeight=areaRect.height, btnW=btnRect.width, btnH=btnRect.height; const margin=8, maxX=Math.max(0,areaWidth-btnW-margin), maxY=Math.max(0,areaHeight-btnH-margin); const currentLeft=btnRect.left-areaRect.left, currentTop=btnRect.top-areaRect.top; let newX,newY,attempts=0; do{ newX=Math.round(margin+Math.random()*maxX); newY=Math.round(margin+Math.random()*maxY); attempts++; } while(distance(currentLeft,currentTop,newX,newY)<Math.max(btnW,btnH)*0.75 && attempts<20); noBtn.style.transition='transform 180ms ease, left 220ms ease, top 220ms ease'; noBtn.style.left=newX+'px'; noBtn.style.top=newY+'px'; noBtn.style.transform='translateY(-6px) scale(1.02)'; setTimeout(()=>{ noBtn.style.transform=''; },220); }
-    function distance(x1,y1,x2,y2){ const dx=x1-x2, dy=y1-y2; return Math.sqrt(dx*dx+dy*dy); }
-    window.addEventListener('resize',()=>{ const areaRect=buttonArea.getBoundingClientRect(); if(areaRect.width<360){ noBtn.style.position=''; noBtn.style.left=''; noBtn.style.top=''; noBtn.style.transform=''; } });
-
+    function dodgeButton(){
+      if(!buttonArea) return;
+      const areaRect = buttonArea.getBoundingClientRect();
+      const btnRect = noBtn.getBoundingClientRect();
+      noBtn.style.position = 'absolute';
+      const areaWidth = areaRect.width, areaHeight = areaRect.height, btnW = btnRect.width, btnH = btnRect.height;
+      const margin = 8;
+      const maxX = Math.max(0, areaWidth - btnW - margin);
+      const maxY = Math.max(0, areaHeight - btnH - margin);
+      const currentLeft = btnRect.left - areaRect.left, currentTop = btnRect.top - areaRect.top;
+      let newX, newY, attempts = 0;
+      do { newX = Math.round(margin + Math.random() * maxX); newY = Math.round(margin + Math.random() * maxY); attempts++; }
+      while(distance(currentLeft, currentTop, newX, newY) < Math.max(btnW, btnH) * 0.6 && attempts < 30);
+      noBtn.style.transition = 'transform 180ms ease, left 220ms ease, top 220ms ease';
+      noBtn.style.left = newX + 'px'; noBtn.style.top = newY + 'px';
+      noBtn.style.transform = 'translateY(-6px) scale(1.02)'; setTimeout(()=> { noBtn.style.transform = ''; }, 220);
+    }
+    function distance(x1,y1,x2,y2){ const dx = x1-x2, dy = y1-y2; return Math.sqrt(dx*dx + dy*dy); }
+    window.addEventListener('resize', () => {
+      const areaRect = buttonArea.getBoundingClientRect();
+      if(areaRect.width < 360){ noBtn.style.position=''; noBtn.style.left=''; noBtn.style.top=''; noBtn.style.transform=''; }
+    });
   })();
   </script>
 </body>
