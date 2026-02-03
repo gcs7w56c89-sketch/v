@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Will you be my Valentine?</title>
+  <style>
+    :root{--bg1:#ff7eb3;--bg2:#ffd2a6;--text:#2b2733;--yes:#64d68f;--no:#ff6b6b}
+    *{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(135deg,var(--bg1),var(--bg2));display:flex;align-items:center;justify-content:center;color:var(--text);padding:2rem}
+    .page{max-width:720px;width:100%;text-align:center;padding:2rem;border-radius:16px;background:rgba(255,255,255,0.06);box-shadow:0 10px 30px rgba(0,0,0,.12)}
+    .question{font-size:clamp(1.6rem,4vw,2rem);margin:0 0 1.25rem}
+    .buttons{display:flex;gap:1rem;justify-content:center;align-items:center;position:relative;min-height:120px}
+    .btn{padding:1rem 2rem;border-radius:12px;border:0;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(43,39,51,.12)}
+    .yes{background:linear-gradient(180deg,var(--yes),#32b36f)}.no{background:linear-gradient(180deg,var(--no),#e04444)}
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(15,8,20,.45);z-index:50}
+    .hidden{display:none}.dialog{background:#fff;color:var(--text);border-radius:16px;padding:1.25rem;width:min(560px,92%);box-shadow:0 20px 60px rgba(11,10,15,.35);text-align:center;position:relative}
+    .close{position:absolute;right:10px;top:10px;border:0;background:transparent;cursor:pointer}
+    .heart{width:140px;height:140px;margin:.5rem auto 1rem;transform:scale(0);transition:transform .45s cubic-bezier(.2,.9,.2,1)}
+    .heart.show{transform:scale(1);animation:beat 800ms infinite}@keyframes beat{0%{transform:scale(.98)}50%{transform:scale(1.06)}100%{transform:scale(.98)}}
+    .confetti-piece{position:absolute;opacity:.95;will-change:transform,top,left;animation:fall 1300ms linear forwards}
+    @keyframes fall{to{transform:translateY(260px) rotate(360deg);opacity:0}}
+    .msg{font-size:1.05rem;margin-top:.25rem}
+    @media (max-width:420px){.buttons{flex-direction:column}.btn{width:100%}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1 class="question">Will you be my Valentine?</h1>
+    <div class="buttons" id="buttonArea">
+      <button id="yesBtn" class="btn yes" aria-label="Yes">YES</button>
+      <button id="noBtn" class="btn no" aria-label="No">NO</button>
+    </div>
+
+    <div id="overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="dialog" role="document">
+        <button id="closeDialog" class="close" aria-label="Close">✕</button>
+        <div id="dialogContent" class="dialog-content"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+  (function(){
+    const yesBtn=document.getElementById('yesBtn'), noBtn=document.getElementById('noBtn'),
+          overlay=document.getElementById('overlay'), dialogContent=document.getElementById('dialogContent'),
+          closeDialog=document.getElementById('closeDialog'), buttonArea=document.getElementById('buttonArea');
+
+    function showDialog(html){ dialogContent.innerHTML=html; overlay.classList.remove('hidden'); overlay.setAttribute('aria-hidden','false'); setTimeout(()=>{ const el=overlay.querySelector('[id]'); if(el) el.focus(); },40); }
+    function hideDialog(){ overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden','true'); yesBtn.focus(); noBtn.style.position=''; noBtn.style.left=''; noBtn.style.top=''; noBtn.style.transform=''; }
+
+    yesBtn.addEventListener('click', ()=> {
+      const html = '<div class=\"heart\" id=\"heartSVG\"><svg viewBox=\"0 0 32 29.6\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><path fill=\"#ff5b86\" d=\"M23.6 0c-2.9 0-5.4 1.6-6.8 4C15.8 1.6 13.3 0 10.4 0 4.7 0 0 4.7 0 10.4c0 7.5 9.6 13.6 15.6 18.4 1.7 1.2 4.2 1.2 5.9 0C22.4 24 32 17.9 32 10.4 32 4.7 27.3 0 23.6 0z\"/></svg></div><div class=\"msg\"><strong>YAY... I LOVE YOU KB. YOU\\'RE MY VALENTINE FOREVER</strong></div><div style=\"margin-top:.8rem;\"><button id=\"yayClose\" class=\"btn yes\" style=\"padding:.6rem 1rem; font-size:1rem\">Aww ❤️</button></div>';
+      showDialog(html); createConfetti(28);
+      setTimeout(()=>{ const yayClose=document.getElementById('yayClose'); if(yayClose) yayClose.addEventListener('click', hideDialog); },50);
+    });
+
+    noBtn.addEventListener('pointerenter',(ev)=>{ if(ev.pointerType==='mouse'||ev.pointerType==='touch') dodgeButton(); });
+    noBtn.addEventListener('click', ()=> { const html='<div class=\"msg\"><strong>Oh!</strong> You clicked NO — maybe next time? 💌</div><div style=\"margin-top:.8rem;\"><button id=\"noClose\" class=\"btn\" style=\"background:#777;color:#fff;padding:.6rem 1rem; font-size:1rem\">Close</button></div>'; showDialog(html); setTimeout(()=>{ const noClose=document.getElementById('noClose'); if(noClose) noClose.addEventListener('click', hideDialog); },50); });
+
+    closeDialog.addEventListener('click', hideDialog);
+    overlay.addEventListener('click', e=>{ if(e.target===overlay) hideDialog(); });
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape' && overlay.getAttribute('aria-hidden')==='false') hideDialog(); });
+
+    function createConfetti(count){ const colors=['#ffcdff','#ffd2a6','#64d68f','#ff6b6b','#ff5b86','#ffe66d']; for(let i=0;i<count;i++){ const piece=document.createElement('div'); piece.className='confetti-piece'; const w=8+Math.random()*10,h=12+Math.random()*14; piece.style.width=w+'px'; piece.style.height=h+'px'; piece.style.background=colors[Math.floor(Math.random()*colors.length)]; piece.style.left=(20+Math.random()*60)+'%'; piece.style.top=(10+Math.random()*10)+'%'; piece.style.transform='rotate('+ (Math.random()*360) +'deg)'; piece.style.animationDuration=(900+Math.random()*900)+'ms'; piece.style.borderRadius=(Math.random()*50)+'%'; overlay.appendChild(piece); setTimeout(()=>{ if(piece&&piece.parentNode) piece.parentNode.removeChild(piece); },2200); } }
+
+    function dodgeButton(){ const areaRect=buttonArea.getBoundingClientRect(), btnRect=noBtn.getBoundingClientRect(); noBtn.style.position='absolute'; const areaWidth=areaRect.width, areaHeight=areaRect.height, btnW=btnRect.width, btnH=btnRect.height; const margin=8, maxX=Math.max(0,areaWidth-btnW-margin), maxY=Math.max(0,areaHeight-btnH-margin); const currentLeft=btnRect.left-areaRect.left, currentTop=btnRect.top-areaRect.top; let newX,newY,attempts=0; do{ newX=Math.round(margin+Math.random()*maxX); newY=Math.round(margin+Math.random()*maxY); attempts++; } while(distance(currentLeft,currentTop,newX,newY)<Math.max(btnW,btnH)*0.75 && attempts<20); noBtn.style.transition='transform 180ms ease, left 220ms ease, top 220ms ease'; noBtn.style.left=newX+'px'; noBtn.style.top=newY+'px'; noBtn.style.transform='translateY(-6px) scale(1.02)'; setTimeout(()=>{ noBtn.style.transform=''; },220); }
+    function distance(x1,y1,x2,y2){ const dx=x1-x2, dy=y1-y2; return Math.sqrt(dx*dx+dy*dy); }
+    window.addEventListener('resize',()=>{ const areaRect=buttonArea.getBoundingClientRect(); if(areaRect.width<360){ noBtn.style.position=''; noBtn.style.left=''; noBtn.style.top=''; noBtn.style.transform=''; } });
+
+  })();
+  </script>
+</body>
+</html>
